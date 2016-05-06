@@ -1,0 +1,179 @@
+<html><head>
+<style>
+#info {
+  position: absolute;
+  top: 2%;
+  width: 100%;
+  padding: 10px;
+  text-align: center;
+  color: #ffff00
+}
+
+body {
+  overflow: hidden;
+}
+</style>
+</head>
+
+<body> 
+<div id="info">Homework 1
+  <br/> <br/>
+  <button id="toggle" style="width:20%">Toggle Turn</button>
+  <button id="analog" style="width:20%">Analog</button>
+  <button id="quartz" style="width:20%">Quartz</button>
+  <button id="sector" style="width:20%">Sector</button>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r70/three.min.js"></script>
+<script src="https://dl.dropboxusercontent.com/u/3587259/Code/Threejs/OrbitControls.js"></script>
+<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+
+<script>
+var scene, renderer, camera;
+var controls;
+var angle = 0, turn = false, style = 1;
+var useAngle = 0;
+var clock = new THREE.Clock(false);
+var sectors = new THREE.Object3D();
+var hand = new THREE.Object3D();
+var sect;
+
+init();
+animate();
+
+$("#toggle").click(function() {
+  turn = !turn;
+  if (turn == false) {
+  	clock.stop();
+  } else if (turn == true) {
+  	clock.start();
+  }
+});
+
+$("#analog").click(function() {
+	//$("#analog").text("My NEW Text");
+  style = 1;
+});
+
+$("#quartz").click(function() {
+  style = 2;
+});
+
+$("#sector").click(function() {
+  style = 3;
+});
+
+function init() {
+  scene = new THREE.Scene();
+  renderer = new THREE.WebGLRenderer();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(0x888888);
+  document.body.appendChild(renderer.domElement);
+
+  camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 1000);
+  camera.position.z = 500;
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  
+  THREE.ImageUtils.crossOrigin = '';
+    var texture = THREE.ImageUtils.loadTexture('http://i.imgur.com/IzrJlRi.jpg');
+  
+  var centerGeometry = new THREE.CircleGeometry(3, 32);
+  var material = new THREE.MeshBasicMaterial({map: texture});
+  var center = new THREE.Mesh(centerGeometry, new THREE.MeshBasicMaterial({
+      color: 0x000000
+    }));
+  center.position.z = 1;
+  scene.add(center);
+
+  var circleGeometry = new THREE.CircleGeometry(120, 32);
+  
+  var circle = new THREE.Mesh( circleGeometry, material );
+  circle.position.z = 0.05;
+  scene.add(circle);
+  
+  circleGeometry = new THREE.CircleGeometry(140, 32);
+  texture = THREE.ImageUtils.loadTexture('http://i.imgur.com/MWc8rs6.jpg');
+  material = new THREE.MeshBasicMaterial({
+  	map: texture, side:THREE.DoubleSide});
+  var woodCircle = new THREE.Mesh( circleGeometry, material );
+  scene.add(woodCircle);
+  
+  
+  texture = THREE.ImageUtils.loadTexture('http://i.imgur.com/6HnlxJn.jpg');
+  var planeGeometry = new THREE.PlaneBufferGeometry(5, 80, 32);
+  secondHand = new THREE.Mesh(planeGeometry, new THREE.MeshBasicMaterial({
+        map: texture}));
+    secondHand.position.set(0, 40, 1);
+    hand.add(secondHand);
+    scene.add(hand);
+  
+  window.addEventListener('resize', onWindowResize, false);
+}
+
+function onWindowResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function analog() {
+	scene.add(hand);
+	if (turn) {
+  		angle -= 2 * Math.PI / 60 * clock.getDelta();
+      if(angle*(-1) >= Math.PI*2)
+        angle = 0;
+  	}
+  hand.rotation.z = angle;
+}
+
+function quartz() {
+	scene.add(hand);
+	useAngle += clock.getDelta();
+	if(useAngle >= 1){
+  	angle -= useAngle * Math.PI * 2 / 60;
+  	useAngle = 0;
+  }
+  if(angle*(-1) >= Math.PI*2)
+    	angle = 0;
+  hand.rotation.z = angle;
+}
+
+function sector() {
+	scene.remove(hand);
+	scene.add(sectors);
+}
+
+function animate() {
+  controls.update();
+  if (style == 1) {
+  	analog();
+  } else if (style == 2) {
+  	quartz();
+  } else if (style == 3) {
+  	sector();
+  }
+  
+  if (turn) {
+  	sectors.remove(sect);
+  	angle -= 2 * Math.PI / 60 * clock.getDelta();
+    if(angle*(-1) >= Math.PI*2) {
+    	angle = 0;
+    }
+  	var secGeometry = new THREE.RingGeometry(0, 80, 30, 1, Math.PI*2+angle, angle*(-1));
+  	var secMaterial = new THREE.MeshBasicMaterial({color: 0xff0000});
+  	sect = new THREE.Mesh( secGeometry, secMaterial );
+    sect.position.z = 1;
+    sect.rotation.z = Math.PI/2;
+    sectors.add(sect);
+  }
+  
+  if(style != 3)
+  	scene.remove(sectors);
+  
+  requestAnimationFrame(animate);
+  renderer.render(scene, camera);
+}
+
+</script>
+</body>
+
+</html>

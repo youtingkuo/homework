@@ -1,0 +1,445 @@
+<html><head>
+<style>
+#info {
+  position: absolute;
+  top: 2%;
+  width: 100%;
+  padding: 10px;
+  text-align: center;
+  color: #ffff00
+}
+
+body {
+  overflow: hidden;
+}
+</style>
+</head>
+
+<body> 
+<div id="info">HW2<br/></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r70/three.min.js"></script>
+<script src="https://dl.dropboxusercontent.com/u/3587259/Code/Threejs/OrbitControls.js"></script>
+<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.5.1/dat.gui.js"></script>
+
+<script>
+var scene, renderer, camera;
+var controls;
+var leftLeg, rightLeg, body, head;
+var frontSkirt, backSkirt, leftSkirt, rightSkirt;
+var angle = 0;
+
+init();
+animate();
+
+function init() {
+  scene = new THREE.Scene();
+  renderer = new THREE.WebGLRenderer();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(0x888888);
+  document.body.appendChild(renderer.domElement);
+
+  camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 1000);
+  camera.position.set(180, 50, 300);
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
+	
+  //light
+	var light = new THREE.PointLight(0xffffff, 1);
+  light.position.set(200, 500, 700);
+  scene.add(light);
+  var light2 = new THREE.PointLight(0xffffff, 1);
+  light2.position.set(200, 500, -700);
+  scene.add(light2);
+  	
+  THREE.ImageUtils.crossOrigin = '';
+  texture = THREE.ImageUtils.loadTexture('http://i.imgur.com/JWnJnZ8.jpg');
+  var headMaterialArray = [];
+  headMaterialArray.push(new THREE.MeshLambertMaterial({
+    map: THREE.ImageUtils.loadTexture('http://i.imgur.com/r5VHA5C.jpg'), side:THREE.DoubleSide}));
+  headMaterialArray.push(new THREE.MeshLambertMaterial({
+    map: THREE.ImageUtils.loadTexture('http://i.imgur.com/u2mdVuf.jpg'), side:THREE.DoubleSide}));
+  headMaterialArray.push(new THREE.MeshLambertMaterial({
+    map: THREE.ImageUtils.loadTexture('http://i.imgur.com/FxfinQG.jpg'), side:THREE.DoubleSide}));
+  headMaterialArray.push(new THREE.MeshLambertMaterial({visible: false}));
+  headMaterialArray.push(new THREE.MeshLambertMaterial({
+    map: THREE.ImageUtils.loadTexture('http://i.imgur.com/wZCPkNO.png'), side:THREE.DoubleSide}));
+  headMaterialArray.push(new THREE.MeshLambertMaterial({
+    map: THREE.ImageUtils.loadTexture('http://i.imgur.com/cKwkXx9.jpg'), side:THREE.DoubleSide}));
+  
+  var bodyMaterialArray = [];
+  bodyMaterialArray.push(new THREE.MeshLambertMaterial({map: texture, side:THREE.DoubleSide}));
+  bodyMaterialArray.push(new THREE.MeshLambertMaterial({map: texture, side:THREE.DoubleSide}));
+  bodyMaterialArray.push(new THREE.MeshLambertMaterial({map: texture, side:THREE.DoubleSide}));
+  bodyMaterialArray.push(new THREE.MeshLambertMaterial({visible: false}));
+  bodyMaterialArray.push(new THREE.MeshLambertMaterial({
+    map: THREE.ImageUtils.loadTexture('http://i.imgur.com/vqgckgB.jpg'), side:THREE.DoubleSide}));
+  bodyMaterialArray.push(new THREE.MeshLambertMaterial({
+    map: THREE.ImageUtils.loadTexture('http://i.imgur.com/L0lw4Wg.jpg'), side:THREE.DoubleSide}));
+
+  //leg and joint
+  leftLeg = new THREE.Object3D();
+  rightLeg = new THREE.Object3D();
+  var material = new THREE.MeshLambertMaterial({map: texture});
+	var mesh = new THREE.Mesh(new THREE.BoxGeometry(10, 27, 19), material);
+  leftLeg.position.set(10, 0, 0);
+  
+  rightLeg.position.set(-10, 0, 0);
+  mesh.position.set(0, -20, 0);
+  
+  var mesh2 = mesh.clone();
+  mesh2.position.set(00, -20, 0);
+  var joint = new THREE.Mesh (new THREE.CylinderGeometry (4, 4, 10, 16),
+  	new THREE.MeshBasicMaterial({wireframe:true}));
+  joint.rotation.x = Math.PI/2;
+  joint.position.y = 18;
+  mesh.add (joint);
+  var joint2 = joint.clone();
+  mesh2.add (joint2);
+  rightLeg.add(mesh);
+  leftLeg.add(mesh2);
+  scene.add(rightLeg);
+  scene.add(leftLeg);
+  
+  //skirt
+  frontSkirt = new THREE.Object3D();
+  backSkirt = new THREE.Object3D();
+  leftSkirt = new THREE.Object3D();
+  rightSkirt = new THREE.Object3D();
+  //front
+  mesh = new THREE.Mesh (new THREE.PlaneGeometry(32, 12), new THREE.MeshLambertMaterial ({map: texture, side:THREE.DoubleSide}));
+  mesh.position.y = -6;
+  frontSkirt.add (mesh);
+  scene.add(frontSkirt);
+  frontSkirt.position.set(0, 0.5, 11);
+  frontSkirt.rotation.x = Math.PI/6*(-1);
+  //back
+  mesh2 = mesh.clone();
+  mesh2.position.y = -6;
+  backSkirt.add (mesh2);
+  scene.add(backSkirt);
+  backSkirt.position.set(0, 0.5, -11);
+  backSkirt.rotation.x = Math.PI/6;
+  //left
+  mesh = new THREE.Mesh (new THREE.PlaneGeometry(22, 12), new THREE.MeshLambertMaterial ({map: texture, side:THREE.DoubleSide}));
+  mesh.position.y = -6;
+  mesh.rotation.y = Math.PI/2;
+  leftSkirt.add(mesh);
+  scene.add(leftSkirt);
+  leftSkirt.position.set(16, 0.5, 0);
+  leftSkirt.rotation.z = Math.PI/6;
+  //right
+  mesh2 = mesh.clone();
+  mesh2.position.y = -6;
+  mesh2.rotation.y = Math.PI/2*(-1);
+  rightSkirt.add(mesh2);
+  scene.add(rightSkirt);
+  rightSkirt.position.set(-16, 0.5, 0);
+  rightSkirt.rotation.z = Math.PI/6*(-1);
+  
+  //arm
+  leftArm = new THREE.Object3D();
+  rightArm = new THREE.Object3D();
+  //left
+  mesh = new THREE.Mesh (new THREE.BoxGeometry (10, 33, 12), material);
+  leftArm.position.set (20, 35, 0);
+  mesh.position.set(0, -20, 0);
+  leftArm.rotation.z = 0.3;
+  joint = new THREE.Mesh (new THREE.CylinderGeometry (4, 4, 10, 16),
+  	new THREE.MeshBasicMaterial({wireframe:true}));
+  joint.rotation.x = Math.PI/2;
+  joint.position.y = 20.5;
+  mesh.add (joint);
+  leftArm.add(mesh);
+  scene.add(leftArm);
+  //right
+  mesh2 = mesh.clone();
+  rightArm.position.set (-20, 35, 0);
+  mesh2.position.set(0, -20, 0);
+  rightArm.rotation.z = -0.3;
+  joint2 = joint.clone();
+  joint2.rotation.x = Math.PI/2;
+  joint.position.y = 20.5;
+  mesh2.add (joint2);
+  rightArm.add(mesh2);
+  scene.add(rightArm);
+
+	//head
+  head = new THREE.Object3D();
+  mesh = new THREE.Mesh(new THREE.BoxGeometry(52, 33.6, 36), new THREE.MeshFaceMaterial(headMaterialArray));
+  head.position.set(0, 39.7, 0);
+  mesh.position.set(0, 16.8, 0);
+  head.add(mesh);
+  scene.add(head);
+  
+  //body
+  body = new THREE.Object3D();
+  mesh = new THREE.Mesh(new THREE.BoxGeometry(32, 39, 22), new THREE.MeshFaceMaterial(bodyMaterialArray));
+  mesh.position.y = 20;
+  body.add(mesh);
+  body.add(head);
+  body.add(leftArm);
+  body.add(rightArm);
+  body.add(leftLeg);
+  body.add(rightLeg);
+  body.add(frontSkirt);
+  body.add(backSkirt);
+  body.add(leftSkirt);
+  body.add(rightSkirt);
+  scene.add(body);
+
+  window.addEventListener('resize', onWindowResize, false);
+  
+  ///////////////////////////////////////////////////////////////
+  gcontrols = {
+    headAngle1: 0,
+    headAngle2: 0,
+    headAngle3: 0,
+    bodyAngle1: 0,
+    bodyAngle2: 0,
+    bodyAngle3: 0,
+    leftArmAngle1: 0,
+    leftArmAngle2: 0,
+    leftArmAngle3: 0.3,
+    rightArmAngle1: 0,
+    rightArmAngle2: 0,
+    rightArmAngle3: -0.3,
+    leftLegAngle1: 0,
+    leftLegAngle2: 0,
+    leftLegAngle3: 0,
+    rightLegAngle1: 0,
+    rightLegAngle2: 0,
+    rightLegAngle3: 0,
+  }
+  
+  var gui = new dat.GUI({load:loadJSON()});
+  
+  var headControl = gui.addFolder('head');
+  headControl.add(gcontrols, 'headAngle1', -0.5, 0.5);
+  headControl.add(gcontrols, 'headAngle2', -0.5, 0.5);
+  headControl.add(gcontrols, 'headAngle3', -0.3, 0.3);
+  
+  var bodyControl = gui.addFolder('body');
+  bodyControl.add(gcontrols, 'bodyAngle1', -0.5, 1.5);
+  bodyControl.add(gcontrols, 'bodyAngle2', -0.5, 0.5);
+  bodyControl.add(gcontrols, 'bodyAngle3', -0.5, 0.5);
+  
+  var armControl = gui.addFolder('arm');
+  var leftArmControl = armControl.addFolder('leftArm');
+  leftArmControl.add(gcontrols, 'leftArmAngle1', -1.5, 1);
+  leftArmControl.add(gcontrols, 'leftArmAngle2', -0.3, 0.3);
+  leftArmControl.add(gcontrols, 'leftArmAngle3', 0.3, 1.6);
+  var rightArmControl = armControl.addFolder('rightArm');
+  rightArmControl.add(gcontrols, 'rightArmAngle1', -1.5, 1);
+  rightArmControl.add(gcontrols, 'rightArmAngle2', -0.3, 0.3);
+  rightArmControl.add(gcontrols, 'rightArmAngle3', -1.6, -0.3);
+  
+  var legControl = gui.addFolder('leg');
+  var leftLegControl = legControl.addFolder('leftLeg');
+  leftLegControl.add(gcontrols, 'leftLegAngle1', -0.3, 0.3);
+  leftLegControl.add(gcontrols, 'leftLegAngle2', -0.3, 0.3);
+  leftLegControl.add(gcontrols, 'leftLegAngle3', 0, 0.4);
+  var rightLegControl = legControl.addFolder('rightLeg');
+  rightLegControl.add(gcontrols, 'rightLegAngle1', -0.3, 0.3);
+  rightLegControl.add(gcontrols, 'rightLegAngle2', -0.3, 0.3);
+  rightLegControl.add(gcontrols, 'rightLegAngle3', -0.4, 0);
+  
+  gui.remember(gcontrols);
+  gui.close();
+  
+}
+
+function onWindowResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function loadJSON() {
+	return {
+  "preset": "Default",
+  "remembered": {
+    "Default": {
+      "0": {
+	      "headAngle1": 0,
+        "headAngle2": 0,
+        "headAngle3": 0,
+        "bodyAngle1": 0,
+        "bodyAngle2": 0,
+        "bodyAngle3": 0,
+        "leftArmAngle1": 0,
+        "leftArmAngle2": 0,
+        "leftArmAngle3": 0.3,
+        "rightArmAngle1": 0,
+        "rightArmAngle2": 0,
+        "rightArmAngle3": -0.3,
+        "leftLegAngle1": 0,
+        "leftLegAngle2": 0,
+        "leftLegAngle3": 0,
+        "rightLegAngle1": 0,
+        "rightLegAngle2": 0,
+        "rightLegAngle3": 0
+      } 
+    },  
+    "pose1": {
+      "0": {
+        "headAngle1": -0.2573669460990672,
+        "headAngle2": 0,
+        "headAngle3": 0,
+        "bodyAngle1": 0.27201426241205884,
+        "bodyAngle2": 0,
+        "bodyAngle3": 0,
+        "leftArmAngle1": 0.4361616633256191,
+        "leftArmAngle2": 0,
+        "leftArmAngle3": 0.3,
+        "rightArmAngle1": -1.5,
+        "rightArmAngle2": 0.016520341482796796,
+        "rightArmAngle3": -0.3,
+        "leftLegAngle1": -0.3,
+        "leftLegAngle2": 0,
+        "leftLegAngle3": 0,
+        "rightLegAngle1": -0.3,
+        "rightLegAngle2": 0,
+        "rightLegAngle3": 0
+      }
+    },
+    "pose2": {
+      "0": {
+        "headAngle1": 0,
+        "headAngle2": 0,
+        "headAngle3": 0,
+        "bodyAngle1": -0.21325184538980652,
+        "bodyAngle2": 0,
+        "bodyAngle3": 0,
+        "leftArmAngle1": 0,
+        "leftArmAngle2": 0,
+        "leftArmAngle3": 1.6,
+        "rightArmAngle1": 0,
+        "rightArmAngle2": 0,
+        "rightArmAngle3": -1.6,
+        "leftLegAngle1": 0.22528907735442877,
+        "leftLegAngle2": 0,
+        "leftLegAngle3": 0,
+        "rightLegAngle1": 0.24549250340652223,
+        "rightLegAngle2": 0,
+        "rightLegAngle3": 0
+      }
+    },
+    "pose3": {
+      "0": {
+        "headAngle1": 0,
+        "headAngle2": 0.5,
+        "headAngle3": 0,
+        "bodyAngle1": 0,
+        "bodyAngle2": 0,
+        "bodyAngle3": 0,
+        "leftArmAngle1": -0.5740096392790519,
+        "leftArmAngle2": 0,
+        "leftArmAngle3": 0.3,
+        "rightArmAngle1": 0.29586009351941467,
+        "rightArmAngle2": 0,
+        "rightArmAngle3": -0.3,
+        "leftLegAngle1": 0.2926338308614069,
+        "leftLegAngle2": 0,
+        "leftLegAngle3": 0,
+        "rightLegAngle1": -0.3,
+        "rightLegAngle2": 0,
+        "rightLegAngle3": 0
+      }
+    }
+  },
+  "closed": false,
+  "folders": {
+    "head": {
+      "preset": "Default",
+      "closed": true,
+      "folders": {}
+    },
+    "body": {
+      "preset": "Default",
+      "closed": true,
+      "folders": {}
+    },
+    "arm": {
+      "preset": "Default",
+      "closed": true,
+      "folders": {
+        "leftArm": {
+          "preset": "Default",
+          "closed": true,
+          "folders": {}
+        },
+        "rightArm": {
+          "preset": "Default",
+          "closed": true,
+          "folders": {}
+        }
+      }
+    },
+    "leg": {
+      "preset": "Default",
+      "closed": true,
+      "folders": {
+        "leftLeg": {
+          "preset": "Default",
+          "closed": true,
+          "folders": {}
+        },
+        "rightLeg": {
+          "preset": "Default",
+          "closed": true,
+          "folders": {}
+        }
+      }
+    }
+  }
+}
+}
+
+function animate() {
+  controls.update();
+	
+  head.rotation.x = gcontrols.headAngle1;
+  head.rotation.y = gcontrols.headAngle2;
+  head.rotation.z = gcontrols.headAngle3;
+  
+  leftArm.rotation.x = gcontrols.leftArmAngle1;
+  leftArm.rotation.y = gcontrols.leftArmAngle2;
+  leftArm.rotation.z = gcontrols.leftArmAngle3;
+  rightArm.rotation.x = gcontrols.rightArmAngle1;
+  rightArm.rotation.y = gcontrols.rightArmAngle2;
+  rightArm.rotation.z = gcontrols.rightArmAngle3;
+  
+  leftLeg.rotation.x = gcontrols.leftLegAngle1;
+  leftLeg.rotation.y = gcontrols.leftLegAngle2;
+  leftLeg.rotation.z = gcontrols.leftLegAngle3;
+  rightLeg.rotation.x = gcontrols.rightLegAngle1;
+  rightLeg.rotation.y = gcontrols.rightLegAngle2;
+  rightLeg.rotation.z = gcontrols.rightLegAngle3;
+  
+  body.rotation.x = gcontrols.bodyAngle1;
+  body.rotation.y = gcontrols.bodyAngle2;
+  body.rotation.z = gcontrols.bodyAngle3;
+  
+  /*
+  animate.sign = (animate.sign === undefined) ? (-1) : animate.sign;
+  if (angle < Math.PI/6*(-1) || angle > Math.PI/6)
+  	animate.sign *= -1;
+  angle += animate.sign*0.03;
+  leftLeg.rotation.x = angle;
+  rightLeg.rotation.x = angle*(-1);
+  leftArm.rotation.x = angle*(-1);
+  rightArm.rotation.x = angle;
+  //head.rotation.x = angle;
+  //body.rotation.z = angle;
+  */
+  
+  requestAnimationFrame(animate);
+  renderer.render(scene, camera);
+}
+
+</script>
+
+
+</body>
+
+</html>
