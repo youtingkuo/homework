@@ -1,0 +1,109 @@
+<html><head>
+<style>
+#info {
+  top:5%;
+  position: absolute;
+  color: yellow;
+  text-align: center;
+  width: 100%;
+}
+body {
+  overflow: hidden
+}
+</style>
+</head>
+
+<body> 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r70/three.min.js"></script>
+<script src="https://dl.dropboxusercontent.com/u/3587259/Code/Threejs/OrbitControls.js"></script>
+<div id='info'>
+Model is from <a href='https://clara.io/view/c8f8dc9f-6947-4ab3-8e15-40c38abced96#'>URL</a>
+</div>
+
+<script>
+var scene, renderer, camera;
+var controls;
+var racer;
+var angle = 0;
+var bumpMap;
+var clock = new THREE.Clock();
+
+init();
+animate();
+
+function init()
+{
+	var width = window.innerWidth;
+	var height = window.innerHeight;
+
+	renderer = new THREE.WebGLRenderer({antialias: true});
+	renderer.setSize (width, height);
+	renderer.setClearColor (0x888888);
+	document.body.appendChild (renderer.domElement);
+
+	scene = new THREE.Scene();
+
+	camera = new THREE.PerspectiveCamera (45, width/height, 1, 10000);
+	camera.position.set(0, 6000, 5200);
+
+	controls = new THREE.OrbitControls (camera, renderer.domElement);
+	
+  THREE.ImageUtils.crossOrigin = '';
+  var boxMaterialArray = [];
+  boxMaterialArray.push(new THREE.MeshLambertMaterial({
+    map: THREE.ImageUtils.loadTexture('http://i.imgur.com/qTj48LD.png'), side:THREE.DoubleSide}));
+  boxMaterialArray.push(new THREE.MeshLambertMaterial({
+    map: THREE.ImageUtils.loadTexture('http://i.imgur.com/qTj48LD.png'), side:THREE.DoubleSide}));
+  boxMaterialArray.push(new THREE.MeshLambertMaterial({
+    map: THREE.ImageUtils.loadTexture('http://i.imgur.com/570KCiw.jpg'), side:THREE.DoubleSide}));
+  boxMaterialArray.push(new THREE.MeshLambertMaterial({visible: false}));
+  boxMaterialArray.push(new THREE.MeshLambertMaterial({
+    map: THREE.ImageUtils.loadTexture('http://i.imgur.com/qTj48LD.png'), side:THREE.DoubleSide}));
+  boxMaterialArray.push(new THREE.MeshLambertMaterial({
+    map: THREE.ImageUtils.loadTexture('http://i.imgur.com/qTj48LD.png'), side:THREE.DoubleSide}));
+  
+  var mesh = new THREE.Mesh(new THREE.BoxGeometry(1000, 1000, 1000), new THREE.MeshFaceMaterial(boxMaterialArray));
+  mesh.position.y = 500;
+  scene.add(mesh);
+  
+	var gridXZ = new THREE.GridHelper(3000, 500);
+	gridXZ.setColors( new THREE.Color(0xff0000), new THREE.Color(0xffffff) );
+	scene.add(gridXZ);
+
+	var light = new THREE.PointLight(0xffffff, 1);
+  light.position.set(1000, 10000, 2000);
+  scene.add(light);
+	
+	var loader = new THREE.ObjectLoader();
+  loader.load ('https://youtingkuo.github.io/model/kart.json', 
+  function ( obj ) {
+  	racer = obj;
+  	obj.rotation.y = Math.PI;
+    scene.add( obj );
+  });
+
+}
+
+function animate()
+{
+	controls.update();
+	var dt = clock.getDelta();
+	var x = 1800 * Math.cos(angle);
+  var z = 1800 * Math.sin(angle);
+  
+  
+	if (racer !== undefined) { 
+		racer.position.set(x, 0, z);
+    racer.rotation.y = -(angle + Math.PI);
+    angle += dt;
+	}
+	
+  
+	requestAnimationFrame ( animate ); 
+	renderer.render (scene, camera);
+}
+
+</script>
+</body>
+
+</html>
